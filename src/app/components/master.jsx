@@ -1,18 +1,23 @@
-import Sidebar from "./sidebar";
 import Footer from "./footer";
-export default function Master() {
+import TopBar from "../components/topbar";
+import NavBar from "../components/navbar";
+
+export default function Master({ children }) {
   return (
-    <div id="app">
-      <div id="sidebar">
-        <Sidebar />
-      </div>
-      <div id="main">
-        <header className="mb-3">
-          <a href="#" className="burger-btn d-block d-xl-none">
-            <i className="bi bi-justify fs-3" />
-          </a>
-        </header>
-        <Footer />
+    <div className="container-scroller">
+      {/* Top Navbar */}
+      <TopBar />
+      <div className="container-fluid page-body-wrapper">
+        {/* Navbar */}
+        <NavBar />
+        <div className="main-panel">
+          {/* content-wrapper */}
+          <div className="content-wrapper">
+              {children}
+          </div>
+          {/* Footer */}
+          <Footer/>
+        </div>
       </div>
     </div>
   );
