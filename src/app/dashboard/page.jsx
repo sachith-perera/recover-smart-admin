@@ -3,7 +3,7 @@ import MasterTemplate from "../components/master";
 export default function DashboardPage() {
   return (
     <MasterTemplate>
-           <div className="row">
+      <div className="row">
         <div className="col-sm-12">
           <div className="home-tab">
             <div className="d-sm-flex align-items-center justify-content-between border-bottom">
@@ -21,9 +21,7 @@ export default function DashboardPage() {
                     Overview
                   </a>
                 </li>
-             
               </ul>
-            
             </div>
             <div className="tab-content tab-content-basic">
               <div
@@ -52,7 +50,9 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="statistics-title">Recovery Completion Rate</p>
+                        <p className="statistics-title">
+                          Recovery Completion Rate
+                        </p>
                         <h3 className="rate-percentage">68.8</h3>
                         <p className="text-danger d-flex">
                           <i className="mdi mdi-menu-down" />
@@ -69,7 +69,6 @@ export default function DashboardPage() {
                           <span>+0.8%</span>
                         </p>
                       </div>
-                   
                     </div>
                   </div>
                 </div>
@@ -139,9 +138,7 @@ export default function DashboardPage() {
                                     <p className="text-small mb-2">
                                       Total Visitors
                                     </p>
-                                    <h4 className="mb-0 fw-bold">
-                                      26.80%
-                                    </h4>
+                                    <h4 className="mb-0 fw-bold">26.80%</h4>
                                   </div>
                                 </div>
                               </div>
@@ -223,9 +220,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="d-sm-flex align-items-center mt-1 justify-content-between">
                               <div className="d-sm-flex align-items-center mt-4 justify-content-between">
-                                <h2 className="me-2 fw-bold">
-                                  $36,2531.00
-                                </h2>
+                                <h2 className="me-2 fw-bold">$36,2531.00</h2>
                                 <h4 className="me-2">USD</h4>
                                 <h4 className="text-success">(+1.37%)</h4>
                               </div>
@@ -240,16 +235,13 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  
-                 
                   </div>
-                
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </MasterTemplate>
   );
 }

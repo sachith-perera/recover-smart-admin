@@ -13,10 +13,10 @@ export default function topbar() {
           </div>
           <div>
             <a className="navbar-brand brand-logo" href="index.html">
-              <img src="../../assets/images/logo.jpg" alt="logo" />
+              <img src="/assets/images/logo.jpg" alt="logo" />
             </a>
             <a className="navbar-brand brand-logo-mini" href="index.html">
-              <img src="../../assets/images/logo.jpg" alt="logo" />
+              <img src="/assets/images/logo.jpg" alt="logo" />
             </a>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function topbar() {
                 <a className="dropdown-item preview-item">
                   <div className="preview-thumbnail">
                     <img
-                      src="assets/images/faces/face10.jpg"
+                      src="/assets/images/faces/face10.jpg"
                       alt="image"
                       className="img-sm profile-pic"
                     />
@@ -145,7 +145,7 @@ export default function topbar() {
                 <a className="dropdown-item preview-item">
                   <div className="preview-thumbnail">
                     <img
-                      src="assets/images/faces/face12.jpg"
+                      src="/assets/images/faces/face12.jpg"
                       alt="image"
                       className="img-sm profile-pic"
                     />
@@ -163,7 +163,7 @@ export default function topbar() {
                 <a className="dropdown-item preview-item">
                   <div className="preview-thumbnail">
                     <img
-                      src="assets/images/faces/face1.jpg"
+                      src="/assets/images/faces/face1.jpg"
                       alt="image"
                       className="img-sm profile-pic"
                     />
@@ -190,7 +190,7 @@ export default function topbar() {
               >
                 <img
                   className="img-xs rounded-circle"
-                  src="assets/images/faces/face8.jpg"
+                  src="/assets/images/faces/face8.jpg"
                   alt="Profile image"
                 />{" "}
               </a>
@@ -201,7 +201,7 @@ export default function topbar() {
                 <div className="dropdown-header text-center">
                   <img
                     className="img-md rounded-circle"
-                    src="assets/images/faces/face8.jpg"
+                    src="/assets/images/faces/face8.jpg"
                     alt="Profile image"
                   />
                   <p className="mb-1 mt-3 fw-semibold">Allen Moreno</p>

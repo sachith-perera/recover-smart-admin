@@ -42,7 +42,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="/assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css" />
         <link rel="stylesheet" type="text/css" href="/assets/js/select.dataTables.min.css" />
 
-        <link rel="stylesheet" href="assets/css/style.css"></link>
+        <link rel="stylesheet" href="/assets/css/style.css"></link>
 
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
