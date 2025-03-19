@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function topbar() {
     return ( 
         <nav className="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
@@ -12,12 +14,12 @@ export default function topbar() {
             </button>
           </div>
           <div>
-            <a className="navbar-brand brand-logo" href="index.html">
+            <Link className="navbar-brand brand-logo" href="/dashboard" >
               <img src="/assets/images/logo.jpg" alt="logo" />
-            </a>
-            <a className="navbar-brand brand-logo-mini" href="index.html">
+            </Link>
+            <Link className="navbar-brand brand-logo-mini" href="/dashboard" >
               <img src="/assets/images/logo.jpg" alt="logo" />
-            </a>
+            </Link>
           </div>
         </div>
         <div className="navbar-menu-wrapper d-flex align-items-top">

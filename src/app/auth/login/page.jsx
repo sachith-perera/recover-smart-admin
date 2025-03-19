@@ -38,7 +38,7 @@ export default function LoginPage() {
       }
 
       // Save token to localStorage
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', data.access);
       
       // Optionally save user data if your backend returns it
       if (data.user) {
@@ -80,7 +80,7 @@ export default function LoginPage() {
                       type="text"
                       className="form-control form-control-lg"
                       id="exampleInputEmail1"
-                      placeholder="Email"
+                      placeholder="Username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required

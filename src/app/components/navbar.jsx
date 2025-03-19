@@ -1,12 +1,14 @@
+import Link from "next/link";
+
 export default function navbar() {
   return (
     <nav className="sidebar sidebar-offcanvas" id="sidebar">
     <ul className="nav">
       <li className="nav-item">
-        <a className="nav-link" href="index.html">
+        <Link className="nav-link" href="/dashboard" >
           <i className="mdi mdi-grid-large menu-icon" />
           <span className="menu-title">Dashboard</span>
-        </a>
+        </Link>
       </li>
       <li className="nav-item">
         <a
@@ -23,22 +25,14 @@ export default function navbar() {
         <div className="collapse" id="ui-basic">
           <ul className="nav flex-column sub-menu">
             <li className="nav-item">
-              {" "}
-              <a
-                className="nav-link"
-                href="pages/ui-features/buttons.html"
-              >
-                Add
-              </a>
+              <Link className="nav-link" href="/patient/index">
+                  Add
+              </Link>
             </li>
             <li className="nav-item">
-              {" "}
-              <a
-                className="nav-link"
-                href="pages/ui-features/dropdowns.html"
-              >
-                View
-              </a>
+              <Link className="nav-link" href="/patient/index">
+                  View
+              </Link>
             </li>
            
           </ul>
