@@ -25,7 +25,7 @@ export default function navbar() {
         <div className="collapse" id="ui-basic">
           <ul className="nav flex-column sub-menu">
             <li className="nav-item">
-              <Link className="nav-link" href="/patient/index">
+              <Link className="nav-link" href="/patient/create">
                   Add
               </Link>
             </li>
@@ -38,7 +38,34 @@ export default function navbar() {
           </ul>
         </div>
       </li>
-  
+      <li className="nav-item">
+        <a
+          className="nav-link"
+          data-bs-toggle="collapse"
+          href="#ui-basic"
+          aria-expanded="false"
+          aria-controls="ui-basic"
+        >
+          <i className="menu-icon mdi mdi-account-check" />
+          <span className="menu-title">Checklist</span>
+          <i className="menu-arrow" />
+        </a>
+        <div className="collapse" id="ui-basic">
+          <ul className="nav flex-column sub-menu">
+            <li className="nav-item">
+              <Link className="nav-link" href="/checklist/create">
+                  Add
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" href="/checklist/index">
+                  View
+              </Link>
+            </li>
+           
+          </ul>
+        </div>
+      </li>
     </ul>
   </nav>
   );

@@ -11,20 +11,19 @@ import {
   getFilteredRowModel,
 } from "@tanstack/react-table";
 import MasterTemplate from "../../components/master";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter for redirect
 
-export default function Patients() {
+export default function Checklist() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const router = useRouter(); // Works with Next.js App Router
+  const router = useRouter();
   const columnHelper = createColumnHelper();
 
-  // Get token from localStorage
   const token = localStorage.getItem("token");
 
   const columns = [
@@ -32,33 +31,28 @@ export default function Patients() {
       header: "ID",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("first_name", {
-      header: "First Name",
+    columnHelper.accessor("patient_full_name", {
+      header: "Patient",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("middle_name", {
-      header: "Middle Name",
+    columnHelper.accessor("diagnosis", {
+      header: "Diagnosis",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("last_name", {
-      header: "Last Name",
+    columnHelper.accessor("created_date", {
+      header: "Created Date",
       cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor("email", {
-      header: "Email",
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor("mobile", {
-      header: "Mobile",
-      cell: (info) => info.getValue(),
+    columnHelper.accessor(row => `${row.total_checklist_items_completed} of ${row.total_checklist_items} completed`, {
+      id: 'total_checklist_items',
+      header: 'Completed',
     }),
     {
       header: "Actions",
       accessorKey: "actions",
-      size: 150,
+      size: 200, // Increased size to accommodate the new button
       cell: ({ row }) => (
         <div className="action-buttons">
-      
           <button
             className="btn btn-sm btn-warning me-1"
             onClick={() => handleEdit(row.original.id)}
@@ -66,11 +60,12 @@ export default function Patients() {
             Edit
           </button>
           <button
-            className="btn btn-sm btn-danger"
-            onClick={() => handleDelete(row.original.id)}
+            className="btn btn-sm btn-danger me-1"
+            onClick={() => handleDelete(row.original.id, `Checklist ${row.original.id}`)}
           >
             Delete
           </button>
+         
         </div>
       ),
     },
@@ -96,108 +91,99 @@ export default function Patients() {
     },
   });
 
-  // Action handlers (implement these according to your needs)
-  const handleView = (id) => {
-    console.log(`View patient ${id}`);
-    // Add your view logic here (e.g., redirect to patient details page)
-  };
-
-  const handleEdit = (id) => {
-    router.push(`/patient/edit/${id}`); // Redirect to edit page with patient ID
-  };
-
-  const fetchPatients = async () => {
+  const fetchChecklists = async () => {
     try {
       setLoading(true);
+      if (!token) throw new Error("Authentication token not found");
 
-      if (!token) {
-        throw new Error("Authentication token not found");
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/checklists/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error fetching patients: ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Error fetching checklists: ${response.statusText}`);
 
       const result = await response.json();
+      console.log("Fetched data:", result.length, result);
       setData(result);
       setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
       setData([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleEdit = (id) => router.push(`/checklist/edit/${id}`);
+
   const handleDelete = async (id, name) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `You are about to delete this. This action cannot be undone!`,
-      icon: 'warning',
+      title: "Are you sure?",
+      text: `You are about to delete "${name}". This action cannot be undone!`,
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: "#dc3545",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, delete it!",
     });
 
     if (result.isConfirmed) {
       try {
-        // Simulate an API call (replace with your actual delete endpoint)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/${id}/`, {
-          method: 'DELETE',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/checklists/${id}/`, {
+          method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
         if (response.ok) {
-       
           Swal.fire({
-            title: 'Deleted!',
-            text: `record has been deleted successfully.`,
-            icon: 'success',
+            title: "Deleted!",
+            text: `"${name}" has been deleted successfully.`,
+            icon: "success",
             timer: 2000,
-            showConfirmButton: true
+            showConfirmButton: true,
           });
-
-          setData(data.filter((patient) => patient.id !== id)); 
-
-        } else {
-          throw new Error('Delete failed');
-        }
+          setData(data.filter((item) => item.id !== id));
+        } else throw new Error("Delete failed");
       } catch (error) {
         Swal.fire({
-          title: 'Error!',
-          text: 'There was a problem deleting the patient.',
-          icon: 'error',
-          confirmButtonText: 'OK'
+          title: "Error!",
+          text: "There was a problem deleting the checklist.",
+          icon: "error",
+          confirmButtonText: "OK",
         });
       }
     }
   };
 
   useEffect(() => {
-    fetchPatients();
+    fetchChecklists();
   }, []);
+
+  useEffect(() => {
+    console.log("Data updated:", data.length, data);
+    console.log("Table rows:", table.getRowModel().rows.length, table.getRowModel().rows);
+  }, [data, table]);
 
   return (
     <MasterTemplate>
       <div className="row">
         <div className="col-sm-12">
           <div>
-            <h1>Patients</h1>
-
-            <button style={{float:'right', marginBottom:'10px'}} className="btn btn-primary" > <i className="" ></i> <Link style={{color:'white'}} href="/patient/create" >Add Patient</Link> </button>
+            <h1>Checklists</h1>
+            <button
+              style={{ float: "right", marginBottom: "10px" }}
+              className="btn btn-primary"
+            >
+              <Link style={{ color: "white" }} href="/checklist/create">
+                Add Checklist
+              </Link>
+            </button>
 
             {error ? (
               <div className="alert alert-danger mt-3" role="alert">
@@ -214,7 +200,7 @@ export default function Patients() {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search patients..."
+                      placeholder="Search checklists..."
                       value={globalFilter ?? ""}
                       onChange={(e) => setGlobalFilter(e.target.value)}
                     />
@@ -257,26 +243,21 @@ export default function Patients() {
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td
-                            colSpan={columns.length}
-                            className="text-center p-5"
-                          >
+                          <td colSpan={7} className="text-center p-5">
                             <div className="d-flex justify-content-center align-items-center">
                               <div
                                 className="spinner-border text-primary me-2"
                                 role="status"
                               >
-                                <span className="visually-hidden">
-                                  Loading...
-                                </span>
+                                <span className="visually-hidden">Loading...</span>
                               </div>
-                              <span>Loading patients...</span>
+                              <span>Loading checklists...</span>
                             </div>
                           </td>
                         </tr>
                       ) : table.getRowModel().rows.length ? (
                         table.getRowModel().rows.map((row) => (
-                          <tr key={row.id}>
+                          <tr key={`row-${row.id}`}>
                             {row.getVisibleCells().map((cell) => (
                               <td key={cell.id}>
                                 {flexRender(
@@ -289,11 +270,8 @@ export default function Patients() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={columns.length}
-                            className="text-center p-5"
-                          >
-                            No patients found.
+                          <td colSpan={7} className="text-center p-5">
+                            No checklists found.
                           </td>
                         </tr>
                       )}
@@ -313,7 +291,7 @@ export default function Patients() {
                         table.getState().pagination.pageSize,
                       table.getFilteredRowModel().rows.length
                     )}{" "}
-                    of {table.getFilteredRowModel().rows.length} patients
+                    of {table.getFilteredRowModel().rows.length} checklists
                   </div>
                   <div className="d-flex align-items-center">
                     <button

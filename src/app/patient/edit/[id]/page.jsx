@@ -1,63 +1,103 @@
 "use client";
 
-import MasterTemplate from "../../components/master";
-import Swal from 'sweetalert2';
-import { useState } from 'react';
-import { z } from 'zod';
-import { useRouter } from "next/navigation"; // Import useRouter for redirect
+import MasterTemplate from "../../../components/master";
+import Swal from "sweetalert2";
+import { useState, useEffect } from "react"; // Added useEffect
+import { useParams, useRouter } from "next/navigation"; // Added for URL params and navigation
+import { z } from "zod";
+
 // Define Zod schema for patient validation
 const patientSchema = z.object({
-  first_name: z.string()
+  first_name: z
+    .string()
     .min(2, "First name must be at least 2 characters")
     .nonempty("First name is required"),
-  middle_name: z.string()
+  middle_name: z
+    .string()
     .max(2, "Middle name should be 1-2 characters")
     .optional(),
-  last_name: z.string()
+  last_name: z
+    .string()
     .min(2, "Last name must be at least 2 characters")
     .nonempty("Last name is required"),
-  username: z.string()
+  username: z
+    .string()
     .min(4, "Username must be at least 4 characters")
     .regex(/^[a-zA-Z0-9_]+$/, "Username must contain only letters, numbers, and underscores")
     .nonempty("Username is required"),
-  email: z.string()
+  email: z
+    .string()
     .email("Please enter a valid email address")
     .nonempty("Email is required"),
-  mobile: z.string()
-    .nonempty("Mobile number is required"),
+  mobile: z.string().nonempty("Mobile number is required"),
 });
 
-export default function CreatePatient() {
+export default function EditPatient() {
   const [formData, setFormData] = useState({
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    username: '',
-    email: '',
-    mobile: ''
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    mobile: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Works with Next.js App Router
+  const [fetchLoading, setFetchLoading] = useState(true); // Loading state for fetching data
+  const { id } = useParams(); // Get the patient ID from the URL
+  const router = useRouter(); // For navigation after success
+  const token = localStorage.getItem("token");
+
+  // Fetch patient data when component mounts
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      try {
+        if (!token) throw new Error("Authentication token not found");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/edit/${id}/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch patient data");
+        const data = await response.json();
+        setFormData(data); // Pre-fill form with fetched data
+        setFetchLoading(false);
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to load patient data: " + error.message,
+        });
+        setFetchLoading(false);
+      }
+    };
+
+    fetchPatientData();
+  }, [id, token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
-    
-    // Validate the entire form on change to keep errors up-to-date
+
+    // Validate the field on change
     try {
       patientSchema.parse({ ...formData, [name]: value });
-      setErrors({});
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors = {};
         error.errors.forEach((err) => {
           fieldErrors[err.path[0]] = err.message;
         });
-        setErrors(fieldErrors);
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
       }
     }
   };
@@ -67,16 +107,16 @@ export default function CreatePatient() {
     try {
       const partialSchema = patientSchema.partial().pick({ [name]: true });
       partialSchema.parse({ [name]: value });
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
-          [name]: error.errors[0].message
+          [name]: error.errors[0].message,
         }));
       }
     }
@@ -84,48 +124,36 @@ export default function CreatePatient() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Validate entire form with Zod
       patientSchema.parse(formData);
       setErrors({});
 
-      // Get token from localStorage
-      const token = localStorage.getItem("token");
-
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/${id}/`, {
+        method: "PUT", // Use PUT for updating (or PATCH if your API supports partial updates)
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create patient');
+        throw new Error(errorData.message || "Failed to update patient");
       }
 
       Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Patient created successfully',
+        icon: "success",
+        title: "Success!",
+        text: "Patient updated successfully",
         timer: 1500,
-        showConfirmButton: true
+        showConfirmButton: false,
+      }).then(() => {
+        router.push("/patient/index"); // Redirect to patient list
       });
-      router.push('/patient/index')
-      // Reset form
-      setFormData({
-        first_name: '',
-        middle_name: '',
-        last_name: '',
-        username: '',
-        email: '',
-        mobile: ''
-      });
-      setErrors({});
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -136,9 +164,9 @@ export default function CreatePatient() {
         setErrors(fieldErrors);
       } else {
         Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: 'Something went wrong! ' + (error.message || 'Unknown error'),
+          icon: "error",
+          title: "Oops...",
+          text: "Something went wrong! " + (error.message || "Unknown error"),
         });
       }
     } finally {
@@ -146,19 +174,32 @@ export default function CreatePatient() {
     }
   };
 
+  // Show loading state while fetching data
+  if (fetchLoading) {
+    return (
+      <MasterTemplate>
+        <div className="row">
+          <div className="col-sm-12 text-center">
+            <h1>Loading...</h1>
+          </div>
+        </div>
+      </MasterTemplate>
+    );
+  }
+
   return (
     <MasterTemplate>
       <div className="row">
         <div className="col-sm-12">
           <div>
-            <h1>Add Patient</h1>
-            
+            <h1>Edit Patient</h1>
+
             <form onSubmit={handleSubmit} noValidate>
               <div className="mb-3">
                 <label htmlFor="first_name" className="form-label">First Name</label>
                 <input
                   type="text"
-                  className={`form-control ${errors.first_name ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.first_name ? "is-invalid" : ""}`}
                   id="first_name"
                   name="first_name"
                   value={formData.first_name}
@@ -173,7 +214,7 @@ export default function CreatePatient() {
                 <label htmlFor="middle_name" className="form-label">Middle Name (optional)</label>
                 <input
                   type="text"
-                  className={`form-control ${errors.middle_name ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.middle_name ? "is-invalid" : ""}`}
                   id="middle_name"
                   name="middle_name"
                   value={formData.middle_name}
@@ -187,7 +228,7 @@ export default function CreatePatient() {
                 <label htmlFor="last_name" className="form-label">Last Name</label>
                 <input
                   type="text"
-                  className={`form-control ${errors.last_name ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.last_name ? "is-invalid" : ""}`}
                   id="last_name"
                   name="last_name"
                   value={formData.last_name}
@@ -202,7 +243,7 @@ export default function CreatePatient() {
                 <label htmlFor="username" className="form-label">Username</label>
                 <input
                   type="text"
-                  className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.username ? "is-invalid" : ""}`}
                   id="username"
                   name="username"
                   value={formData.username}
@@ -217,7 +258,7 @@ export default function CreatePatient() {
                 <label htmlFor="email" className="form-label">Email</label>
                 <input
                   type="email"
-                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
                   id="email"
                   name="email"
                   value={formData.email}
@@ -232,7 +273,7 @@ export default function CreatePatient() {
                 <label htmlFor="mobile" className="form-label">Mobile (+X-XXX-XXX-XXXX)</label>
                 <input
                   type="tel"
-                  className={`form-control ${errors.mobile ? 'is-invalid' : ''}`}
+                  className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
                   id="mobile"
                   name="mobile"
                   value={formData.mobile}
@@ -244,12 +285,20 @@ export default function CreatePatient() {
                 {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={loading || Object.keys(errors).length > 0}
               >
-                {loading ? 'Submitting...' : 'Create Patient'}
+                {loading ? "Updating..." : "Update Patient"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary ms-2"
+                onClick={() => router.push("/patient/index")}
+                disabled={loading}
+              >
+                Cancel
               </button>
             </form>
           </div>
