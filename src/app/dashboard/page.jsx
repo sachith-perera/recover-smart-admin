@@ -1,6 +1,59 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import MasterTemplate from "../components/master";
 
 export default function DashboardPage() {
+  const [data, setData] = useState({
+    number_of_patients: 0,
+    doctors: 0,
+    recovery_completion_rate: 0,
+    average_recovery_time: "0m:0s",
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      if (!token) throw new Error("Authentication token not found");
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error(`Error fetching dashboard data: ${response.statusText}`);
+
+      const result = await response.json();
+      setData({
+        number_of_patients: result.totalPatients || 0,
+        doctors: result.totalDoctors || 0,
+        recovery_completion_rate: result.recoveryCompletionRate || 0,
+        average_recovery_time: result.recoveryTime || "0m:0s",
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setData({
+        number_of_patients: 0,
+        doctors: 0,
+        recovery_completion_rate: 0,
+        average_recovery_time: "0m:0s",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
   return (
     <MasterTemplate>
       <div className="row">
@@ -30,213 +83,80 @@ export default function DashboardPage() {
                 role="tabpanel"
                 aria-labelledby="overview"
               >
-                <div className="row">
-                  <div className="col-sm-12">
-                    <div className="statistics-details d-flex align-items-center justify-content-between">
-                      <div>
-                        <p className="statistics-title">Number of Patients</p>
-                        <h3 className="rate-percentage">50</h3>
-                        <p className="text-danger d-flex">
-                          <i className="mdi mdi-menu-down" />
-                          <span>-0.5%</span>
-                        </p>
+                {loading ? (
+                  <div className="text-center p-5">
+                    <div className="d-flex justify-content-center align-items-center">
+                      <div className="spinner-border text-primary me-2" role="status">
+                        <span className="visually-hidden">Loading...</span>
                       </div>
-                      <div>
-                        <p className="statistics-title">Doctors</p>
-                        <h3 className="rate-percentage">25</h3>
-                        <p className="text-success d-flex">
-                          <i className="mdi mdi-menu-up" />
-                          <span>+0.1%</span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="statistics-title">
-                          Recovery Completion Rate
-                        </p>
-                        <h3 className="rate-percentage">68.8</h3>
-                        <p className="text-danger d-flex">
-                          <i className="mdi mdi-menu-down" />
-                          <span>68.8</span>
-                        </p>
-                      </div>
-                      <div className="d-none d-md-block">
-                        <p className="statistics-title">
-                          Average Recovery Time
-                        </p>
-                        <h3 className="rate-percentage">2m:35s</h3>
-                        <p className="text-success d-flex">
-                          <i className="mdi mdi-menu-down" />
-                          <span>+0.8%</span>
-                        </p>
-                      </div>
+                      <span>Loading dashboard data...</span>
                     </div>
                   </div>
-                </div>
-                <div className="row">
-                  <div className="col-lg-8 d-flex flex-column">
-                    <div className="row flex-grow">
-                      <div className="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
-                        <div className="card card-rounded">
-                          <div className="card-body">
-                            <div className="d-sm-flex justify-content-between align-items-start">
-                              <div>
-                                <h4 className="card-title card-title-dash">
-                                  Performance Line Chart
-                                </h4>
-                                <h5 className="card-subtitle card-subtitle-dash">
-                                  Lorem Ipsum is simply dummy text of the
-                                  printing
-                                </h5>
-                              </div>
-                              <div id="performanceLine-legend" />
-                            </div>
-                            <div className="chartjs-wrapper mt-4">
-                              <canvas id="performanceLine" width="" />
-                            </div>
+                ) : error ? (
+                  <div className="alert alert-danger mt-3" role="alert">
+                    <strong>Error: </strong>
+                    <span>{error}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="row">
+                      <div className="col-sm-12">
+                        <div className="statistics-details d-flex align-items-center justify-content-between">
+                          <div>
+                            <p className="statistics-title">Number of Patients</p>
+                            <h3 className="rate-percentage">{data.number_of_patients}</h3>
+                            <p className="text-danger d-flex">
+                            </p>
+                          </div>
+                          <div>
+                            <p className="statistics-title">Doctors</p>
+                            <h3 className="rate-percentage">{data.doctors}</h3>
+                            <p className="text-success d-flex">
+                            </p>
+                          </div>
+                          <div>
+                            <p className="statistics-title">Recovery Completion Rate</p>
+                            <h3 className="rate-percentage">{data.recovery_completion_rate}%</h3>
+                          </div>
+                          <div className="d-none d-md-block">
+                            <p className="statistics-title">Average Recovery Time</p>
+                            <h3 className="rate-percentage">{data.average_recovery_time} Day(s)</h3>
+                        
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="col-lg-4 d-flex flex-column">
-                    <div className="row flex-grow">
-                      <div className="col-md-6 col-lg-12 grid-margin stretch-card">
-                        <div className="card bg-primary card-rounded">
-                          <div className="card-body pb-0">
-                            <h4 className="card-title card-title-dash text-white mb-4">
-                              Status Summary
-                            </h4>
-                            <div className="row">
-                              <div className="col-sm-4">
-                                <p className="status-summary-ight-white mb-1">
-                                  Closed Value
-                                </p>
-                                <h2 className="text-info">357</h2>
-                              </div>
-                              <div className="col-sm-8">
-                                <div className="status-summary-chart-wrapper pb-4">
-                                  <canvas id="status-summary" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-md-6 col-lg-12 grid-margin stretch-card">
-                        <div className="card card-rounded">
-                          <div className="card-body">
-                            <div className="row">
-                              <div className="col-lg-6">
-                                <div className="d-flex justify-content-between align-items-center mb-2 mb-sm-0">
-                                  <div className="circle-progress-width">
-                                    <div
-                                      id="totalVisitors"
-                                      className="progressbar-js-circle pr-2"
-                                    />
-                                  </div>
+                    
+                    <div className="row">
+                      <div className="col-lg-12 d-flex flex-column">
+                        <div className="row flex-grow">
+                          <div className="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                            <div className="card card-rounded">
+                              <div className="card-body">
+                                <div className="d-sm-flex justify-content-between align-items-start">
                                   <div>
-                                    <p className="text-small mb-2">
-                                      Total Visitors
-                                    </p>
-                                    <h4 className="mb-0 fw-bold">26.80%</h4>
+                                    <h4 className="card-title card-title-dash">
+                                     Recovery Chart
+                                    </h4>
+                                    <h5 className="card-subtitle card-subtitle-dash">
+                                     
+                                    </h5>
                                   </div>
+                                  <div id="performanceLine-legend" />
                                 </div>
-                              </div>
-                              <div className="col-lg-6">
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div className="circle-progress-width">
-                                    <div
-                                      id="visitperday"
-                                      className="progressbar-js-circle pr-2"
-                                    />
-                                  </div>
-                                  <div>
-                                    <p className="text-small mb-2">
-                                      Visits per day
-                                    </p>
-                                    <h4 className="mb-0 fw-bold">9065</h4>
-                                  </div>
+                                <div className="chartjs-wrapper mt-4">
+                                  <canvas id="performanceLine" />
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                  
                     </div>
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-lg-8 d-flex flex-column">
-                    <div className="row flex-grow">
-                      <div className="col-12 grid-margin stretch-card">
-                        <div className="card card-rounded">
-                          <div className="card-body">
-                            <div className="d-sm-flex justify-content-between align-items-start">
-                              <div>
-                                <h4 className="card-title card-title-dash">
-                                  Market Overview
-                                </h4>
-                                <p className="card-subtitle card-subtitle-dash">
-                                  Lorem ipsum dolor sit amet consectetur
-                                  adipisicing elit
-                                </p>
-                              </div>
-                              <div>
-                                <div className="dropdown">
-                                  <button
-                                    className="btn btn-light dropdown-toggle toggle-dark btn-lg mb-0 me-0"
-                                    type="button"
-                                    id="dropdownMenuButton2"
-                                    data-bs-toggle="dropdown"
-                                    aria-haspopup="true"
-                                    aria-expanded="false"
-                                  >
-                                    {" "}
-                                    This month{" "}
-                                  </button>
-                                  <div
-                                    className="dropdown-menu"
-                                    aria-labelledby="dropdownMenuButton2"
-                                  >
-                                    <h6 className="dropdown-header">
-                                      Settings
-                                    </h6>
-                                    <a className="dropdown-item" href="#">
-                                      Action
-                                    </a>
-                                    <a className="dropdown-item" href="#">
-                                      Another action
-                                    </a>
-                                    <a className="dropdown-item" href="#">
-                                      Something else here
-                                    </a>
-                                    <div className="dropdown-divider" />
-                                    <a className="dropdown-item" href="#">
-                                      Separated link
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="d-sm-flex align-items-center mt-1 justify-content-between">
-                              <div className="d-sm-flex align-items-center mt-4 justify-content-between">
-                                <h2 className="me-2 fw-bold">$36,2531.00</h2>
-                                <h4 className="me-2">USD</h4>
-                                <h4 className="text-success">(+1.37%)</h4>
-                              </div>
-                              <div className="me-3">
-                                <div id="marketingOverview-legend" />
-                              </div>
-                            </div>
-                            <div className="chartjs-bar-wrapper mt-3">
-                              <canvas id="marketingOverview" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+               
+                  </>
+                )}
               </div>
             </div>
           </div>

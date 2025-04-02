@@ -1,5 +1,46 @@
 import Link from "next/link";
 
+
+const fetchPatients = async () => {
+
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const router = useRouter(); // Works with Next.js App Router
+  const token = localStorage.getItem("token");
+  
+  try {
+    setLoading(true);
+
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching doctors: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    setData(result);
+    setError(null);
+  } catch (err) {
+    setError(
+      err instanceof Error ? err.message : "An unknown error occurred"
+    );
+    setData([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 export default function topbar() {
     return ( 
         <nav className="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
