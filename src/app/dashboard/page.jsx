@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import MasterTemplate from "../components/master";
+import { useRouter } from "next/navigation"; // Added for redirect
+import Swal from "sweetalert2"; // Added for user-friendly alerts
 
 export default function DashboardPage() {
   const [data, setData] = useState({
@@ -12,17 +14,17 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [token, setToken] = useState(null); // Store token in state
+  const router = useRouter();
 
-  const token = localStorage.getItem("token");
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (authToken) => {
     try {
       setLoading(true);
-      if (!token) throw new Error("Authentication token not found");
+      if (!authToken) throw new Error("Authentication token not found");
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
       });
@@ -50,9 +52,25 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch token and data on mount
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
+
+      if (storedToken) {
+        fetchDashboardData(storedToken);
+      } else {
+        setError("Authentication token not found. Please log in.");
+        setLoading(false);
+        Swal.fire({
+          icon: "error",
+          title: "Authentication Required",
+          text: "Please log in to view the dashboard.",
+        }).then(() => router.push("/login")); // Redirect to login
+      }
+    }
+  }, [router]);
 
   return (
     <MasterTemplate>
@@ -105,14 +123,10 @@ export default function DashboardPage() {
                           <div>
                             <p className="statistics-title">Number of Patients</p>
                             <h3 className="rate-percentage">{data.number_of_patients}</h3>
-                            <p className="text-danger d-flex">
-                            </p>
                           </div>
                           <div>
                             <p className="statistics-title">Doctors</p>
                             <h3 className="rate-percentage">{data.doctors}</h3>
-                            <p className="text-success d-flex">
-                            </p>
                           </div>
                           <div>
                             <p className="statistics-title">Recovery Completion Rate</p>
@@ -120,13 +134,12 @@ export default function DashboardPage() {
                           </div>
                           <div className="d-none d-md-block">
                             <p className="statistics-title">Average Recovery Time</p>
-                            <h3 className="rate-percentage">{data.average_recovery_time} Day(s)</h3>
-                        
+                            <h3 className="rate-percentage">{data.average_recovery_time}</h3>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="row">
                       <div className="col-lg-12 d-flex flex-column">
                         <div className="row flex-grow">
@@ -135,11 +148,9 @@ export default function DashboardPage() {
                               <div className="card-body">
                                 <div className="d-sm-flex justify-content-between align-items-start">
                                   <div>
-                                    <h4 className="card-title card-title-dash">
-                                     Recovery Chart
-                                    </h4>
+                                    <h4 className="card-title card-title-dash">Recovery Chart</h4>
                                     <h5 className="card-subtitle card-subtitle-dash">
-                                     
+                                      Visual representation of recovery trends
                                     </h5>
                                   </div>
                                   <div id="performanceLine-legend" />
@@ -152,9 +163,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                  
                     </div>
-               
                   </>
                 )}
               </div>

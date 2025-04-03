@@ -21,10 +21,9 @@ export default function Checklist() {
   const [error, setError] = useState(null);
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [token, setToken] = useState(null); // Store token in state
   const router = useRouter();
   const columnHelper = createColumnHelper();
-
-  const token = localStorage.getItem("token");
 
   const columns = [
     columnHelper.accessor("id", {
@@ -33,24 +32,28 @@ export default function Checklist() {
     }),
     columnHelper.accessor("patient_full_name", {
       header: "Patient",
-      cell: (info) => info.getValue(),
+      cell: (info) => info.getValue() || "N/A", // Fallback for missing data
     }),
     columnHelper.accessor("diagnosis", {
       header: "Diagnosis",
-      cell: (info) => info.getValue(),
+      cell: (info) => info.getValue() || "N/A",
     }),
     columnHelper.accessor("created_date", {
       header: "Created Date",
-      cell: (info) => info.getValue(),
+      cell: (info) => info.getValue() || "N/A",
     }),
-    columnHelper.accessor(row => `${row.total_checklist_items_completed} of ${row.total_checklist_items} completed`, {
-      id: 'total_checklist_items',
-      header: 'Completed',
-    }),
+    columnHelper.accessor(
+      (row) =>
+        `${row.total_checklist_items_completed ?? 0} of ${row.total_checklist_items ?? 0} completed`,
+      {
+        id: "total_checklist_items",
+        header: "Completed",
+      }
+    ),
     {
       header: "Actions",
       accessorKey: "actions",
-      size: 200, // Increased size to accommodate the new button
+      size: 200,
       cell: ({ row }) => (
         <div className="action-buttons">
           <button
@@ -65,7 +68,6 @@ export default function Checklist() {
           >
             Delete
           </button>
-         
         </div>
       ),
     },
@@ -74,10 +76,7 @@ export default function Checklist() {
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-      globalFilter,
-    },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
@@ -85,20 +84,18 @@ export default function Checklist() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+      pagination: { pageSize: 10 },
     },
   });
 
-  const fetchChecklists = async () => {
+  const fetchChecklists = async (authToken) => {
     try {
       setLoading(true);
-      if (!token) throw new Error("Authentication token not found");
+      if (!authToken) throw new Error("Authentication token not found");
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/checklists/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
       });
@@ -106,7 +103,6 @@ export default function Checklist() {
       if (!response.ok) throw new Error(`Error fetching checklists: ${response.statusText}`);
 
       const result = await response.json();
-      console.log("Fetched data:", result.length, result);
       setData(result);
       setError(null);
     } catch (err) {
@@ -161,14 +157,25 @@ export default function Checklist() {
     }
   };
 
+  // Fetch token and data on mount
   useEffect(() => {
-    fetchChecklists();
-  }, []);
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
 
-  useEffect(() => {
-    console.log("Data updated:", data.length, data);
-    console.log("Table rows:", table.getRowModel().rows.length, table.getRowModel().rows);
-  }, [data, table]);
+      if (storedToken) {
+        fetchChecklists(storedToken);
+      } else {
+        setError("Authentication token not found. Please log in.");
+        setLoading(false);
+        Swal.fire({
+          icon: "error",
+          title: "Authentication Required",
+          text: "Please log in to view checklists.",
+        }).then(() => router.push("/login")); // Redirect to login if no token
+      }
+    }
+  }, [router]);
 
   return (
     <MasterTemplate>
@@ -243,7 +250,7 @@ export default function Checklist() {
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan={7} className="text-center p-5">
+                          <td colSpan={columns.length} className="text-center p-5">
                             <div className="d-flex justify-content-center align-items-center">
                               <div
                                 className="spinner-border text-primary me-2"
@@ -270,7 +277,7 @@ export default function Checklist() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} className="text-center p-5">
+                          <td colSpan={columns.length} className="text-center p-5">
                             No checklists found.
                           </td>
                         </tr>

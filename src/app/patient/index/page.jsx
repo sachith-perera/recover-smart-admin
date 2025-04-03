@@ -11,9 +11,9 @@ import {
   getFilteredRowModel,
 } from "@tanstack/react-table";
 import MasterTemplate from "../../components/master";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter for redirect
+import { useRouter } from "next/navigation";
 
 export default function Patients() {
   const [data, setData] = useState([]);
@@ -21,12 +21,11 @@ export default function Patients() {
   const [error, setError] = useState(null);
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const router = useRouter(); // Works with Next.js App Router
+  const [token, setToken] = useState(null); // Add state for token
+  const router = useRouter();
   const columnHelper = createColumnHelper();
 
-  // Get token from localStorage
-  const token = localStorage.getItem("token");
-
+  // Columns definition remains the same
   const columns = [
     columnHelper.accessor("id", {
       header: "ID",
@@ -58,7 +57,6 @@ export default function Patients() {
       size: 150,
       cell: ({ row }) => (
         <div className="action-buttons">
-      
           <button
             className="btn btn-sm btn-warning me-1"
             onClick={() => handleEdit(row.original.id)}
@@ -79,10 +77,7 @@ export default function Patients() {
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-      globalFilter,
-    },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
@@ -90,33 +85,25 @@ export default function Patients() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+      pagination: { pageSize: 10 },
     },
   });
 
-  // Action handlers (implement these according to your needs)
-  const handleView = (id) => {
-    console.log(`View patient ${id}`);
-    // Add your view logic here (e.g., redirect to patient details page)
-  };
-
   const handleEdit = (id) => {
-    router.push(`/patient/edit/${id}`); // Redirect to edit page with patient ID
+    router.push(`/patient/edit/${id}`);
   };
 
-  const fetchPatients = async () => {
+  const fetchPatients = async (authToken) => {
     try {
       setLoading(true);
 
-      if (!token) {
+      if (!authToken) {
         throw new Error("Authentication token not found");
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
       });
@@ -129,65 +116,70 @@ export default function Patients() {
       setData(result);
       setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
       setData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id, name) => {
+  const handleDelete = async (id) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
+      title: "Are you sure?",
       text: `You are about to delete this. This action cannot be undone!`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: "#dc3545",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, delete it!",
     });
 
     if (result.isConfirmed) {
       try {
-        // Simulate an API call (replace with your actual delete endpoint)
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/${id}/`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
         if (response.ok) {
-       
           Swal.fire({
-            title: 'Deleted!',
-            text: `record has been deleted successfully.`,
-            icon: 'success',
+            title: "Deleted!",
+            text: `Record has been deleted successfully.`,
+            icon: "success",
             timer: 2000,
-            showConfirmButton: true
+            showConfirmButton: true,
           });
-
-          setData(data.filter((patient) => patient.id !== id)); 
-
+          setData(data.filter((patient) => patient.id !== id));
         } else {
-          throw new Error('Delete failed');
+          throw new Error("Delete failed");
         }
       } catch (error) {
         Swal.fire({
-          title: 'Error!',
-          text: 'There was a problem deleting the patient.',
-          icon: 'error',
-          confirmButtonText: 'OK'
+          title: "Error!",
+          text: "There was a problem deleting the patient.",
+          icon: "error",
+          confirmButtonText: "OK",
         });
       }
     }
   };
 
+  // Fetch token and data only on the client side
   useEffect(() => {
-    fetchPatients();
+    // Check if we're in the browser environment
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      setToken(storedToken);
+      if (storedToken) {
+        fetchPatients(storedToken);
+      } else {
+        setError("Authentication token not found");
+        setLoading(false);
+      }
+    }
   }, []);
 
   return (
@@ -196,8 +188,11 @@ export default function Patients() {
         <div className="col-sm-12">
           <div>
             <h1>Patients</h1>
-
-            <button style={{float:'right', marginBottom:'10px'}} className="btn btn-primary" > <i className="" ></i> <Link style={{color:'white'}} href="/patient/create" >Add Patient</Link> </button>
+            <button style={{ float: "right", marginBottom: "10px" }} className="btn btn-primary">
+              <Link style={{ color: "white" }} href="/patient/create">
+                Add Patient
+              </Link>
+            </button>
 
             {error ? (
               <div className="alert alert-danger mt-3" role="alert">
@@ -257,18 +252,13 @@ export default function Patients() {
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td
-                            colSpan={columns.length}
-                            className="text-center p-5"
-                          >
+                          <td colSpan={columns.length} className="text-center p-5">
                             <div className="d-flex justify-content-center align-items-center">
                               <div
                                 className="spinner-border text-primary me-2"
                                 role="status"
                               >
-                                <span className="visually-hidden">
-                                  Loading...
-                                </span>
+                                <span className="visually-hidden">Loading...</span>
                               </div>
                               <span>Loading patients...</span>
                             </div>
@@ -279,20 +269,14 @@ export default function Patients() {
                           <tr key={row.id}>
                             {row.getVisibleCells().map((cell) => (
                               <td key={cell.id}>
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             ))}
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={columns.length}
-                            className="text-center p-5"
-                          >
+                          <td colSpan={columns.length} className="text-center p-5">
                             No patients found.
                           </td>
                         </tr>
